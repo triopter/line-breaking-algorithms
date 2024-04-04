@@ -16,30 +16,32 @@ def get_all_combinations(words_iterable):
     words = list(words_iterable)
     words_range = range(len(words)+1)
     return chain.from_iterable(combinations(words, num_words) for num_words in words_range)
+# algorithms/brute_force.py
+# Start of Selection
 
 def break_lines(text, max_width):
     words = text.split()
-    count = len(words)
+    total_words = len(words)
 
-    minimum = 10 ** 20
-    breaks = ()
-    for b in powerset(range(1, count)):
-        m = 0
-        i = 0
-        for j in chain(b, (count,)):
-            w = len(' '.join(words[i:j]))
-            if w > width:
+    minimum_penalty = 10 ** 20
+    optimal_breaks = ()
+    for breaks in get_all_combinations(range(1, total_words)):
+        current_penalty = 0
+        current_index = 0
+        for next_break_index in chain(breaks, (total_words,)):
+            line_width = len(' '.join(words[current_index:next_break_index]))
+            if line_width > max_width:
                 break
-            m += (width - w) ** 2
-            i = j
+            current_penalty += (max_width - line_width) ** 2
+            current_index = next_break_index
         else:
-            if m < minimum:
-                minimum = m
-                breaks = b
+            if current_penalty < minimum_penalty:
+                minimum_penalty = current_penalty
+                optimal_breaks = breaks
 
-    lines = []
-    i = 0
-    for j in chain(breaks, (count,)):
-        lines.append(' '.join(words[i:j]))
-        i = j
-    return lines
+    formatted_lines = []
+    current_index = 0
+    for next_break_index in chain(optimal_breaks, (total_words,)):
+        formatted_lines.append(' '.join(words[current_index:next_break_index]))
+        current_index = next_break_index
+    return formatted_lines
