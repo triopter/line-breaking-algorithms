@@ -8,11 +8,16 @@ paragraph of more than 30 - 40 words.
 
 from itertools import combinations, chain
 
-def powerset(iterable):
-    s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+def get_all_combinations(words_iterable):
+    """
+    Input: an ordered iterable containing the text split into words.
+    Returns a list of all possible combinations of those words that maintain the ordering.
+    """
+    words = list(words_iterable)
+    words_range = range(len(words)+1)
+    return chain.from_iterable(combinations(words, num_words) for num_words in words_range)
 
-def break_lines(text, width):
+def break_lines(text, max_width):
     words = text.split()
     count = len(words)
 
