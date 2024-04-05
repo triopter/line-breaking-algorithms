@@ -8,40 +8,75 @@ paragraph of more than 30 - 40 words.
 
 from itertools import combinations, chain
 
-def get_all_combinations(words_iterable):
-    """
-    Input: an ordered iterable containing the text split into words.
-    Returns a list of all possible combinations of those words that maintain the ordering.
-    """
-    words = list(words_iterable)
-    words_range = range(len(words)+1)
-    return chain.from_iterable(combinations(words, num_words) for num_words in words_range)
-# algorithms/brute_force.py
-# Start of Selection
 
-def break_lines(text, max_width):
+def get_all_scenarios(word_count):
+    """
+    Input: the number of words in the text
+    Returns an iterable of iterables.  Each iterable is a set of word indices
+    representing one of all possible word-break scenarios.
+    Each iterable contains the word indices after which we would break in that scenario.
+    """
+    word_indices = list(range(1, word_count))
+    words_len_range = range(len(word_indices) + 1)
+    return chain.from_iterable(
+        combinations(word_indices, num_words) for num_words in words_len_range
+    )
+
+
+def break_lines(text, max_length):
     words = text.split()
-    total_words = len(words)
+    word_count = len(words)
 
-    minimum_penalty = 10 ** 20
-    optimal_breaks = ()
-    for breaks in get_all_combinations(range(1, total_words)):
-        current_penalty = 0
-        current_index = 0
-        for next_break_index in chain(breaks, (total_words,)):
-            line_width = len(' '.join(words[current_index:next_break_index]))
-            if line_width > max_width:
+    # Each scenario is evaluated with a "penalty" representing how good a fit it is
+    # The lowest penalty wins.  Here we're starting with a theoretically very high penalty
+    # with the expectation that the first scenario will immediately beat it.
+    # This number does set a ceiling on the size of the text we can evaluate.
+    #
+    # Each scenario's total penalty is the sum of squares of how much shorter lines are than
+    # the max width, so penalties are much higher for shorter lines
+    #
+    # @TODO: what happens if we set this to Infinity?
+    minimum_penalty = 10**20
+    # Lists the word indices after which we would break
+    optimal_scenario = ()
+
+    for scenario in get_all_scenarios(word_count):
+        # We sum up the penalty for the scenario starting from zero
+        scenario_penalty = 0
+        # starting with the zeroth word
+        line_start_word_num = 0
+
+        # calculate the line length for each line in the scenario
+        for break_after_word_num in chain(scenario, (word_count,)):
+            # mock up the line by joining all the words in it, and check its length
+            line_width = len(" ".join(words[line_start_word_num:break_after_word_num]))
+
+            if line_width > max_length:
+                # this scenario is invalid because at least one of its lines is too long
+                # skip to the next scenario
                 break
-            current_penalty += (max_width - line_width) ** 2
-            current_index = next_break_index
+
+            # calculate this line's penalty and add it to the scenario's
+            scenario_penalty += (max_length - line_width) ** 2
+
+            # set the starting point for the next line
+            line_start_word_num = break_after_word_num
+
         else:
-            if current_penalty < minimum_penalty:
-                minimum_penalty = current_penalty
-                optimal_breaks = breaks
+            # We hit this clause only if all our lines were within our max length
+            # Check if this is the best scenario so far, and if so, save it as our optimal scenario so far
+            if scenario_penalty < minimum_penalty:
+                minimum_penalty = scenario_penalty
+                optimal_scenario = scenario
 
     formatted_lines = []
-    current_index = 0
-    for next_break_index in chain(optimal_breaks, (total_words,)):
-        formatted_lines.append(' '.join(words[current_index:next_break_index]))
-        current_index = next_break_index
+    line_start_word_num = 0
+
+    # assemble all the lines for the scenario
+    for break_after_word_num in chain(optimal_scenario, (word_count,)):
+        formatted_lines.append(
+            " ".join(words[line_start_word_num:break_after_word_num])
+        )
+        line_start_word_num = break_after_word_num
+
     return formatted_lines
