@@ -50,7 +50,7 @@ def break_lines(text, max_length):
     # the max width, so penalties are much higher for shorter lines
     #
     # @TODO: what happens if we set this to Infinity?
-    minimum_penalty = 10**20
+    min_penalty = 10**20
     # Lists the word indices after which we would break
     optimal_scenario = ()
 
@@ -79,8 +79,8 @@ def break_lines(text, max_length):
         else:
             # We hit this clause only if all our lines were within our max length
             # Check if this is the best scenario so far, and if so, save it as our optimal scenario so far
-            if scenario_penalty < minimum_penalty:
-                minimum_penalty = scenario_penalty
+            if scenario_penalty < min_penalty:
+                min_penalty = scenario_penalty
                 optimal_scenario = scenario
 
     formatted_lines = []

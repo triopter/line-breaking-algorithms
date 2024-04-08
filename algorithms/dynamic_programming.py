@@ -30,6 +30,9 @@ selecting the best lines first for the end of the text results in forcing dispro
 lines earlier in the text.  I might later investigate this by trying to craft some problem inputs -- 
 or maybe not because it's not a particularly efficient algo anyway.  If you can come up with any, 
 let me know and I'll run them through the test suite and note them in the codebase somewhere.
+
+I'm also confused about why we build off the min penalty for the line start instead of the line end.
+I might end up checking that against various inputs to see if there's a bug.
 """
 
 
@@ -61,9 +64,10 @@ def break_lines(text, max_length):
     # Using "penalties" again based on the squares of how much shorter each line is than the max
     # but here we're storing a list of them, one for each word
     # first one is set to zero and the rest are set to a prohibitively high value
-    # The value at each index represents the lowest penalty we've found so far for any line ending at that word
-    minimum_penalty = [0] + [10**20] * word_count
-    # For each word at index i, the value at i in this list will store the optimal starting word index for a line ending at word i
+    # The value at each index represents the lowest penalty we've found so far for any line ENDING at that word
+    # Each word's min penalty is the value at index (word_index + 1)
+    min_penalties = [0] + [10**20] * word_count
+    # For each word at index i, the value at i in this list will store the optimal starting word index for a line ENDING at word i
     optimal_start_for_end = [0] * word_count
 
     # Loop through our potential lines.  The way the loop works is that:
@@ -84,15 +88,16 @@ def break_lines(text, max_length):
             # for a valid potential line
             else:
                 # this line's penalty is the penalty for the best option so far for the line start plus the square of the extra space for the line
+                # (Noemi asks: Why the minimum for the line START?  Which we haven't calculated yet...)
                 line_penalty = (
-                    minimum_penalty[line_start]
+                    min_penalties[line_start]
                     + slack_space_matrix[line_start][line_end] ** 2
                 )
 
             # Unless the line is too long, it's the best option we've found so far for a line that would end at the current ending index
             # So save this starting word as a potential break point for this ending word
-            if minimum_penalty[line_end + 1] > line_penalty:
-                minimum_penalty[line_end + 1] = line_penalty
+            if line_penalty < min_penalties[line_end + 1]:
+                min_penalties[line_end + 1] = line_penalty
                 optimal_start_for_end[line_end] = line_start
 
             line_start -= 1
