@@ -32,30 +32,36 @@ This is exactly the same result as if the text was thought of as a
 
 def break_lines(text, max_length):
     words = text.split()
-    count = len(words)
+    word_count = len(words)
     offsets = [0]
-    for w in words:
-        offsets.append(offsets[-1] + len(w))
+    for word in words:
+        offsets.append(offsets[-1] + len(word))
 
-    minima = [0] + [10**20] * count
-    breaks = [0] * (count + 1)
-    for i in range(count):
-        j = i + 1
-        while j <= count:
-            w = offsets[j] - offsets[i] + j - i - 1
-            if w > max_length:
+    minima = [0] + [10**20] * word_count
+    breaks = [0] * (word_count + 1)
+    for current_index in range(word_count):
+        next_index = current_index + 1
+        while next_index <= word_count:
+            current_width = (
+                offsets[next_index]
+                - offsets[current_index]
+                + next_index
+                - current_index
+                - 1
+            )
+            if current_width > max_length:
                 break
-            cost = minima[i] + (max_length - w) ** 2
-            if cost < minima[j]:
-                minima[j] = cost
-                breaks[j] = i
-            j += 1
+            cost = minima[current_index] + (max_length - current_width) ** 2
+            if cost < minima[next_index]:
+                minima[next_index] = cost
+                breaks[next_index] = current_index
+            next_index += 1
 
     lines = []
-    j = count
-    while j > 0:
-        i = breaks[j]
-        lines.append(" ".join(words[i:j]))
-        j = i
+    current_position = word_count
+    while current_position > 0:
+        start_position = breaks[current_position]
+        lines.append(" ".join(words[start_position:current_position]))
+        current_position = start_position
     lines.reverse()
     return lines
