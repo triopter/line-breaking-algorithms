@@ -1,3 +1,17 @@
+# Copyright (c) 2014, Juraj Sukop
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+# REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+# LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+# OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+# PERFORMANCE OF THIS SOFTWARE.
+
 """
 via https://xxyxyz.org/line-breaking/:
 The deficiency of [the brute force approach] lies in that it repeatedly solves the same subproblems. 
@@ -7,7 +21,9 @@ removed line, would result in even better configuration, contradicting its optim
 subproblem just once, it is then necessary to find out and later re-use which of the lines ending 
 with some word contributes least to the overall cost. As each of the "n" words could terminate at 
 most "n" potential lines, the algorithm runs in O(n ^ 2).
+"""
 
+"""
 Noemi's notes: Because this only ever looks at potential breaks one line at a time, I'm not sure 
 it produces optimal output in all cases.  I suspect there are some pathological inputs for which 
 selecting the best lines first for the end of the text results in forcing disproportionately short 
@@ -15,9 +31,6 @@ lines earlier in the text.  I might later investigate this by trying to craft so
 or maybe not because it's not a particularly efficient algo anyway.  If you can come up with any, 
 let me know and I'll run them through the test suite and note them in the codebase somewhere.
 """
-
-# algorithms/dynamic_programming.py
-# Start of Selection
 
 
 def break_lines(text, max_length):
