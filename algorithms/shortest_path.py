@@ -35,6 +35,8 @@ same potential issues as the dynamic programming algo.  (This is essentially
 that exact algo with some unnecessary work excised.)
 """
 
+import math
+
 
 def break_lines(text, max_length):
     words = text.split()
@@ -101,3 +103,7 @@ def break_lines(text, max_length):
         line_end = line_start
     lines.reverse()
     return lines
+
+
+# skip tests with inputs more than this number of words long
+break_lines.max_test_length = math.inf

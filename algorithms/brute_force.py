@@ -94,3 +94,7 @@ def break_lines(text, max_length):
         line_start_word_num = break_after_word_num
 
     return formatted_lines
+
+
+# skip tests with inputs more than this number of words long
+break_lines.max_test_length = 20

@@ -35,6 +35,8 @@ I'm also confused about why we build off the min penalty for the line start inst
 I might end up checking that against various inputs to see if there's a bug.
 """
 
+import math
+
 
 def break_lines(text, max_length):
     words = text.split()
@@ -122,3 +124,7 @@ def break_lines(text, max_length):
 
     lines.reverse()
     return lines
+
+
+# skip tests with inputs more than this number of words long
+break_lines.max_test_length = math.inf
