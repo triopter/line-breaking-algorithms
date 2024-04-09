@@ -68,9 +68,9 @@ def break_lines(text, max_length):
 
     # Here we store the index of the character (relative to the whole text) that each word starts at, minus any spaces
     word_starts = [0]
-    for current_word in words:
+    for maybe_break_before in words:
         # Each word starts at the previous word's start index plus its own length
-        word_starts.append(word_starts[-1] + len(current_word))
+        word_starts.append(word_starts[-1] + len(maybe_break_before))
 
     min_penalties = [0] * (word_count + 1)
     optimal_start_for_end = [0] * (word_count + 1)
@@ -95,9 +95,8 @@ def break_lines(text, max_length):
     # binary search here
     # We're binary-searching between new_start and current_start
     def find_best_end(new_start, current_start):
-        leftmost_possible_end = (
-            new_start  # originally new_start + 1, gave incorrect output
-        )
+        # originally new_start + 1, gave incorrect output
+        leftmost_possible_end = new_start
         rightmost_possible_end = word_count
 
         # Iterate until we've run out of words to check
@@ -127,37 +126,40 @@ def break_lines(text, max_length):
         return new_start + 1
 
     # A queue (list with performance advantages) of (start, end) tuples
-    # I believe that [0][0] always represents the leftmost word we could possibly use for a line ending in the current word
-    # this queue is only ever 1 or two items long
+    # All lines in lines_to_test are always valid lines less than max_length
+    # This loop discards any that are suboptimal -- I still haven't figured out exactly how
     lines_to_test = deque([(0, 1)])
-    # Each iteration of this loop tests the current word as a potential line ending for the next line
-    #
-    for current_word in range(1, word_count + 1):
+    # Each iteration of this loop tests the current word as a potential line ending
+    # (word to break before, not the last word) for the next line
+    for maybe_break_before in range(1, word_count + 1):
+
         maybe_start = lines_to_test[0][0]
 
         # if the penalty for a one-word line ending at the current word
         # is lower than/equal to the penalty for a line running from the first potential line start
         # to the current word -- which will be true only if the latter is too long, I think
         # and also on the first iteration (or any other iteration) when the first potential start is the prev word
-        if calculate_penalty(current_word - 1, current_word) <= calculate_penalty(
-            maybe_start, current_word
-        ):
+        if calculate_penalty(
+            maybe_break_before - 1, maybe_break_before
+        ) <= calculate_penalty(maybe_start, maybe_break_before):
             # Then the best potential line we have for this line end is the one-word line, I think
-            min_penalties[current_word] = calculate_penalty(
-                current_word - 1, current_word
+            min_penalties[maybe_break_before] = calculate_penalty(
+                maybe_break_before - 1, maybe_break_before
             )
             # and the best start word so far for this end word is the one-word line start
-            optimal_start_for_end[current_word] = current_word - 1
+            optimal_start_for_end[maybe_break_before] = maybe_break_before - 1
             # reset the queue to just a two-word line containing this word and the one after it
             lines_to_test.clear()
             # on the next iteration,
-            lines_to_test.append((current_word - 1, current_word + 1))
+            lines_to_test.append((maybe_break_before - 1, maybe_break_before + 1))
 
         # A two-word line line is better than a one-word line
         else:
             # So save it as the best line we know for this line end
-            min_penalties[current_word] = calculate_penalty(maybe_start, current_word)
-            optimal_start_for_end[current_word] = maybe_start
+            min_penalties[maybe_break_before] = calculate_penalty(
+                maybe_start, maybe_break_before
+            )
+            optimal_start_for_end[maybe_break_before] = maybe_start
 
             # How this loop works:
             # We're comparing two potential lines.  The one on the left side of the comparison
@@ -167,23 +169,28 @@ def break_lines(text, max_length):
             # (On the first iteration, this potential line will be set to a one-word line at the start of the text.)
             # If the line on the left is a better fit than the one on the right,
             # we eliminate the one on the right from our list of potential lines and try again.
+            #
+            # This compares two lines ending in the same word.  If the one starting with our current potential start
+            # is better than the one already queued, there's no point in saving the one on the queue
             while calculate_penalty(
-                current_word - 1, lines_to_test[-1][1]
+                maybe_break_before - 1, lines_to_test[-1][1]
             ) <= calculate_penalty(lines_to_test[-1][0], lines_to_test[-1][1]):
+                # our last attempt at producing a next line was no good.  discard it
                 lines_to_test.pop()
 
-            # Now we take as our bounds the word before the line end
-            # And the best line end we can find for the line starting with the word after the current line end
+            # Here we add a potential line that's the best possible line starting with the word before our currently considered line break
             lines_to_test.append(
                 (
-                    current_word - 1,
-                    find_best_end(current_word - 1, lines_to_test[-1][0]),
+                    maybe_break_before - 1,
+                    # after removing unnecessary increment inside function, no decrement needed here
+                    find_best_end(maybe_break_before - 1, lines_to_test[-1][0]),
                 )
             )
 
             # check if current word is the end of our second (last?) line in the test list
-            if current_word + 1 == lines_to_test[1][1]:
-                # If so, the first line in the test list is no longer relevant
+            if maybe_break_before + 1 == lines_to_test[1][1]:
+                # If so, the line we just added is the correct next line.  We can discard the previous line's queue data
+                # and make this the previous line record.
                 lines_to_test.popleft()
             else:
                 # Extend the first line in the test list by one word to the right
@@ -191,11 +198,11 @@ def break_lines(text, max_length):
 
     # assemble lines from back to front again
     formatted_lines = []
-    current_word = word_count
-    while current_word > 0:
-        start_index = optimal_start_for_end[current_word]
-        formatted_lines.append(" ".join(words[start_index:current_word]))
-        current_word = start_index
+    maybe_break_before = word_count
+    while maybe_break_before > 0:
+        start_index = optimal_start_for_end[maybe_break_before]
+        formatted_lines.append(" ".join(words[start_index:maybe_break_before]))
+        maybe_break_before = start_index
     formatted_lines.reverse()
 
     return formatted_lines

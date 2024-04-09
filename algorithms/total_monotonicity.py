@@ -43,91 +43,132 @@ programming on intervals. Discrete Applied Mathematics 85, 1998.
 def break_lines(text, max_length):
     words = text.split()
     word_count = len(words)
-    word_offsets = [0]
+
+    # Here we store the index of the character (relative to the whole text) that each word starts at, minus any spaces
+    word_starts = [0]
     for word in words:
-        word_offsets.append(word_offsets[-1] + len(word))
+        # Each word starts at the previous word's start index plus its own length
+        word_starts.append(word_starts[-1] + len(word))
 
-    minima_costs = [0] + [10**20] * word_count
-    optimal_breaks = [0] * (word_count + 1)
+    min_penalties = [0] + [10**20] * word_count
+    optimal_start_for_end = [0] * (word_count + 1)
 
-    def calculate_cost(start_index, end_index):
-        line_width = (
-            word_offsets[end_index]
-            - word_offsets[start_index]
-            + end_index
-            - start_index
+    def calculate_penalty(first_word, break_before):
+        # line length is the length of all the words in the line
+        # (first char index of the last word in the line minus char index of the first word of the line)
+        # plus the number of spaces (which is the number of words in the line, minus one)
+        line_length = (
+            word_starts[break_before]
+            - word_starts[first_word]
+            + break_before
+            - first_word
             - 1
         )
-        if line_width > max_length:
-            return 10**10 * (line_width - max_length)
-        return minima_costs[start_index] + (max_length - line_width) ** 2
 
-    def smawk_algorithm(rows, columns):
-        stack = []
-        row_index = 0
-        while row_index < len(rows):
-            if stack:
-                column = columns[len(stack) - 1]
-                if calculate_cost(stack[-1], column) < calculate_cost(
-                    rows[row_index], column
+        # here instead of a standard "really big" number for too-long lines,
+        # we're scaling them by just how much too big they are
+        if line_length > max_length:
+            return 10**10 * (line_length - max_length)
+
+        return min_penalties[first_word] + (max_length - line_length) ** 2
+
+    def smawk(start_words, end_words):
+        possible_starts = []
+        start_ix = 0
+
+        # Iterate through rows
+        while start_ix < len(start_words):
+            if possible_starts:
+                # find column corresponding to the number of potential line starts we've identified so far
+                end_word = end_words[len(possible_starts) - 1]
+
+                # if our furthest line start is a better fit than the one at this row index
+                if calculate_penalty(possible_starts[-1], end_word) < calculate_penalty(
+                    start_words[start_ix], end_word
                 ):
-                    if len(stack) < len(columns):
-                        stack.append(rows[row_index])
-                    row_index += 1
+                    # and if we still have more starts to look at
+                    if len(possible_starts) < len(end_words):
+                        # add this as a potential start
+                        possible_starts.append(start_words[start_ix])
+                    start_ix += 1
                 else:
-                    stack.pop()
-            else:
-                stack.append(rows[row_index])
-                row_index += 1
-        rows = stack
+                    # the last potential start is irrelevant
+                    # try again with the previous one
+                    possible_starts.pop()
 
-        if len(columns) > 1:
-            smawk_algorithm(rows, columns[1::2])
+            # we need to populate our line starts -- the potential one we have is going to be the only and thus best one so far
+            else:
+                possible_starts.append(start_words[start_ix])
+                start_ix += 1
 
-        row_index = column_index = 0
-        while column_index < len(columns):
-            if column_index + 1 < len(columns):
-                end_row = optimal_breaks[columns[column_index + 1]]
+        start_words = possible_starts
+
+        # if we've got at least two items, add any potential starts with a step value of two starting at the second item?  why?
+        if len(end_words) > 1:
+            smawk(start_words, end_words[1::2])
+
+        start_ix = end_ix = 0
+        # Iterate through our potential line starts and ends until we've exhausted them
+        while end_ix < len(end_words):
+            if end_ix + 1 < len(end_words):
+                end = optimal_start_for_end[end_words[end_ix + 1]]
             else:
-                end_row = rows[-1]
-            current_cost = calculate_cost(rows[row_index], columns[column_index])
-            if current_cost < minima_costs[columns[column_index]]:
-                minima_costs[columns[column_index]] = current_cost
-                optimal_breaks[columns[column_index]] = rows[row_index]
-            if rows[row_index] < end_row:
-                row_index += 1
+                # last potential start value
+                end = start_words[-1]
+
+            line_cost = calculate_penalty(start_words[start_ix], end_words[end_ix])
+
+            # if it's the best start we've found so far for this end, save it
+            if line_cost < min_penalties[end_words[end_ix]]:
+                min_penalties[end_words[end_ix]] = line_cost
+                optimal_start_for_end[end_words[end_ix]] = start_words[start_ix]
+
+            # if the start hasn't run past the end, increment it
+            if start_words[start_ix] < end:
+                start_ix += 1
+            # if it has, increment the end by two (why two?)
             else:
-                column_index += 2
+                end_ix += 2
 
     total_words = word_count + 1
     iteration_index = 0
     current_offset = 0
+
     while True:
-        range_end = min(total_words, 2 ** (iteration_index + 1))
+        # the number of potential last words in the line, doubles until we hit the text length
+        last_word_to_check = min(total_words, 2 ** (iteration_index + 1))
+        # I believe this is moving at a diagonal along the start/end matrix
+        # We can't start a line with a word after this one or end a line with a word before it
         current_edge = 2**iteration_index + current_offset
-        smawk_algorithm(
+
+        # populates the min penalties
+        smawk(
+            # list of potential start words
             range(0 + current_offset, current_edge),
-            range(current_edge, range_end + current_offset),
+            # list of potential end words
+            range(current_edge, last_word_to_check + current_offset),
         )
-        current_minima = minima_costs[range_end - 1 + current_offset]
-        for column_index in range(2**iteration_index, range_end - 1):
-            potential_cost = calculate_cost(
-                column_index + current_offset, range_end - 1 + current_offset
+
+        best_cost = min_penalties[last_word_to_check - 1 + current_offset]
+
+        for start_ix in range(2**iteration_index, last_word_to_check - 1):
+            potential_cost = calculate_penalty(
+                start_ix + current_offset, last_word_to_check - 1 + current_offset
             )
-            if potential_cost <= current_minima:
-                total_words -= column_index
+            if potential_cost <= best_cost:
+                total_words -= start_ix
                 iteration_index = 0
-                current_offset += column_index
+                current_offset += start_ix
                 break
         else:
-            if range_end == total_words:
+            if last_word_to_check == total_words:
                 break
             iteration_index = iteration_index + 1
 
     lines = []
     current_index = word_count
     while current_index > 0:
-        start_index = optimal_breaks[current_index]
+        start_index = optimal_start_for_end[current_index]
         lines.append(" ".join(words[start_index:current_index]))
         current_index = start_index
     lines.reverse()
