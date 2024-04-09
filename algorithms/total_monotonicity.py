@@ -39,6 +39,8 @@ Journal of Algorithms 9, 1988.
 programming on intervals. Discrete Applied Mathematics 85, 1998.
 """
 
+import math
+
 
 def break_lines(text, max_length):
     words = text.split()
@@ -173,3 +175,7 @@ def break_lines(text, max_length):
         current_index = start_index
     lines.reverse()
     return lines
+
+
+# skip tests with inputs more than this number of words long
+break_lines.max_test_length = math.inf

@@ -58,7 +58,7 @@ Juraj quickly identified the error (off-by-one in `find_best_end`).  The version
 in this file now produces expected output for all test cases in the repo.
 """
 
-
+import math
 from collections import deque
 
 
@@ -206,3 +206,7 @@ def break_lines(text, max_length):
     formatted_lines.reverse()
 
     return formatted_lines
+
+
+# skip tests with inputs more than this number of words long
+break_lines.max_test_length = math.inf
