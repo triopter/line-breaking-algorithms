@@ -36,7 +36,8 @@ Noemi's notes:
 I haven't entirely figured out how this algorithm operates -- in particular, how the 
 queue (currently named `lines_to_test`) is used.
 
-I've also discovered it gives incorrect output for at least one sample input:
+Note that the original version of this algorithm as of 2024-04-08 gave incorrect output 
+for at least one sample input:
 
 In:
 To sit in solemn silence on a dull, dark dock
@@ -53,7 +54,8 @@ solemn silence
 on a dull,
 dark dock
 
-May revisit this algorithm later.
+Juraj quickly identified the error (off-by-one in `find_best_end`).  The version
+in this file now produces expected output for all test cases in the repo.
 """
 
 
@@ -93,13 +95,16 @@ def break_lines(text, max_length):
     # binary search here
     # We're binary-searching between new_start and current_start
     def find_best_end(new_start, current_start):
-        lowest_possible_end, best_possible_end = new_start + 1, word_count
+        leftmost_possible_end = (
+            new_start  # originally new_start + 1, gave incorrect output
+        )
+        rightmost_possible_end = word_count
 
         # Iterate until we've run out of words to check
         # We're using a binary partitioning (at median_end) looking for a line end (best_possible_end)
         # at which the new line start would be better than the current line start
-        while lowest_possible_end < best_possible_end:
-            median_end = (lowest_possible_end + best_possible_end) // 2
+        while leftmost_possible_end < rightmost_possible_end:
+            median_end = (leftmost_possible_end + rightmost_possible_end) // 2
 
             # Note that due to too-long-line penalty scaling, this comparison will return True
             # if both lines are too long but the one on the right is too long by more than the one on the left
@@ -107,19 +112,19 @@ def break_lines(text, max_length):
             if calculate_penalty(new_start, median_end) <= calculate_penalty(
                 current_start, median_end
             ):
-                best_possible_end = median_end
+                rightmost_possible_end = median_end
             else:
-                lowest_possible_end = median_end + 1
+                leftmost_possible_end = median_end + 1
 
         # Check whether we actually found a line end at which the new start would be better than the current start
-        if calculate_penalty(new_start, best_possible_end) <= calculate_penalty(
-            current_start, best_possible_end
+        if calculate_penalty(new_start, rightmost_possible_end) <= calculate_penalty(
+            current_start, rightmost_possible_end
         ):
             # if we found one, return it
-            return best_possible_end
+            return rightmost_possible_end
 
-        # Otherwise, I think this is telling us to try a 2-word line?  Not sure why +2.
-        return new_start + 2
+        # originally new_start + 2, gave incorrect output
+        return new_start + 1
 
     # A queue (list with performance advantages) of (start, end) tuples
     # I believe that [0][0] always represents the leftmost word we could possibly use for a line ending in the current word
