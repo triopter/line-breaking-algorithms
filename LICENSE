@@ -1,6 +1,7 @@
 
-Algorithms (in the `/algorithms` directory) are licensed from Juraj Sukop 
-under the terms of the ISC license.  See license on each file for details.
+Implementations of algorithms (in the `/algorithms` directory) are licensed 
+from Juraj Sukop under the terms of the ISC license.  See license on each 
+file for details.
 
 All other files in this repository are released by Noemi Millman under the 
 terms of the ISC license (see below).
