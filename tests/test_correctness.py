@@ -26,6 +26,7 @@ def make_test_id(case):
     return case.name
 
 
+# total penalty for the entire text (sum of squares of differences between line lengths and target length)
 def calculate_penalty(lines, max_length):
     return sum([(max_length - len(line)) ** 2 for line in lines])
 
@@ -48,8 +49,8 @@ def test_correctness(algorithm, in_len_out):
     lines = algorithm.break_lines(in_len_out.input, in_len_out.max_line_length)
     expected = in_len_out.output.split("\n")
 
+    # sometimes two variations are equally good, so instead of confirming the algos give
+    # the exact same output, we confirm they give equivalently good output
     assert calculate_penalty(lines, in_len_out.max_line_length) == calculate_penalty(
         expected, in_len_out.max_line_length
     )
-
-    # assert lines == expected
