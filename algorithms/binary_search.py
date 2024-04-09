@@ -103,6 +103,7 @@ def break_lines(text, max_length):
     # Each iteration of this loop tests the current word as a potential line ending for the next line
     #
     for current_word in range(1, word_count + 1):
+        print("testing", lines_to_test, current_word)
 
         maybe_start = lines_to_test[0][0]
 
@@ -113,6 +114,7 @@ def break_lines(text, max_length):
         if calculate_penalty(current_word - 1, current_word) <= calculate_penalty(
             maybe_start, current_word
         ):
+            # print("one word is best:", words[current_word - 1])
             # Then the best potential line we have for this line end is the one-word line, I think
             min_penalties[current_word] = calculate_penalty(
                 current_word - 1, current_word
@@ -163,7 +165,9 @@ def break_lines(text, max_length):
     # assemble lines from back to front again
     formatted_lines = []
     current_word = word_count
-    print(optimal_start_for_end)
+    import pprint
+
+    pprint.pprint([(end, start) for end, start in enumerate(optimal_start_for_end)])
     while current_word > 0:
         start_index = optimal_start_for_end[current_word]
         formatted_lines.append(" ".join(words[start_index:current_word]))
