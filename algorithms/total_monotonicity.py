@@ -42,80 +42,93 @@ programming on intervals. Discrete Applied Mathematics 85, 1998.
 
 def break_lines(text, max_length):
     words = text.split()
-    count = len(words)
-    offsets = [0]
-    for w in words:
-        offsets.append(offsets[-1] + len(w))
+    word_count = len(words)
+    word_offsets = [0]
+    for word in words:
+        word_offsets.append(word_offsets[-1] + len(word))
 
-    minima = [0] + [10**20] * count
-    breaks = [0] * (count + 1)
+    minima_costs = [0] + [10**20] * word_count
+    optimal_breaks = [0] * (word_count + 1)
 
-    def cost(i, j):
-        w = offsets[j] - offsets[i] + j - i - 1
-        if w > max_length:
-            return 10**10 * (w - max_length)
-        return minima[i] + (max_length - w) ** 2
+    def calculate_cost(start_index, end_index):
+        line_width = (
+            word_offsets[end_index]
+            - word_offsets[start_index]
+            + end_index
+            - start_index
+            - 1
+        )
+        if line_width > max_length:
+            return 10**10 * (line_width - max_length)
+        return minima_costs[start_index] + (max_length - line_width) ** 2
 
-    def smawk(rows, columns):
+    def smawk_algorithm(rows, columns):
         stack = []
-        i = 0
-        while i < len(rows):
+        row_index = 0
+        while row_index < len(rows):
             if stack:
-                c = columns[len(stack) - 1]
-                if cost(stack[-1], c) < cost(rows[i], c):
+                column = columns[len(stack) - 1]
+                if calculate_cost(stack[-1], column) < calculate_cost(
+                    rows[row_index], column
+                ):
                     if len(stack) < len(columns):
-                        stack.append(rows[i])
-                    i += 1
+                        stack.append(rows[row_index])
+                    row_index += 1
                 else:
                     stack.pop()
             else:
-                stack.append(rows[i])
-                i += 1
+                stack.append(rows[row_index])
+                row_index += 1
         rows = stack
 
         if len(columns) > 1:
-            smawk(rows, columns[1::2])
+            smawk_algorithm(rows, columns[1::2])
 
-        i = j = 0
-        while j < len(columns):
-            if j + 1 < len(columns):
-                end = breaks[columns[j + 1]]
+        row_index = column_index = 0
+        while column_index < len(columns):
+            if column_index + 1 < len(columns):
+                end_row = optimal_breaks[columns[column_index + 1]]
             else:
-                end = rows[-1]
-            c = cost(rows[i], columns[j])
-            if c < minima[columns[j]]:
-                minima[columns[j]] = c
-                breaks[columns[j]] = rows[i]
-            if rows[i] < end:
-                i += 1
+                end_row = rows[-1]
+            current_cost = calculate_cost(rows[row_index], columns[column_index])
+            if current_cost < minima_costs[columns[column_index]]:
+                minima_costs[columns[column_index]] = current_cost
+                optimal_breaks[columns[column_index]] = rows[row_index]
+            if rows[row_index] < end_row:
+                row_index += 1
             else:
-                j += 2
+                column_index += 2
 
-    n = count + 1
-    i = 0
-    offset = 0
+    total_words = word_count + 1
+    iteration_index = 0
+    current_offset = 0
     while True:
-        r = min(n, 2 ** (i + 1))
-        edge = 2**i + offset
-        smawk(range(0 + offset, edge), range(edge, r + offset))
-        x = minima[r - 1 + offset]
-        for j in range(2**i, r - 1):
-            y = cost(j + offset, r - 1 + offset)
-            if y <= x:
-                n -= j
-                i = 0
-                offset += j
+        range_end = min(total_words, 2 ** (iteration_index + 1))
+        current_edge = 2**iteration_index + current_offset
+        smawk_algorithm(
+            range(0 + current_offset, current_edge),
+            range(current_edge, range_end + current_offset),
+        )
+        current_minima = minima_costs[range_end - 1 + current_offset]
+        for column_index in range(2**iteration_index, range_end - 1):
+            potential_cost = calculate_cost(
+                column_index + current_offset, range_end - 1 + current_offset
+            )
+            if potential_cost <= current_minima:
+                total_words -= column_index
+                iteration_index = 0
+                current_offset += column_index
                 break
         else:
-            if r == n:
+            if range_end == total_words:
                 break
-            i = i + 1
+            iteration_index = iteration_index + 1
 
     lines = []
-    j = count
-    while j > 0:
-        i = breaks[j]
-        lines.append(" ".join(words[i:j]))
-        j = i
+    current_index = word_count
+    while current_index > 0:
+        start_index = optimal_breaks[current_index]
+        lines.append(" ".join(words[start_index:current_index]))
+        current_index = start_index
     lines.reverse()
     return lines
