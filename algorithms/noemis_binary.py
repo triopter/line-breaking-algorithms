@@ -73,10 +73,22 @@ def break_lines(text, max_length):
             - first_word
             - 1
         )
+        print(
+            "line length:",
+            line_length,
+            first_word,
+            break_before,
+            " ".join(words[first_word:break_before]),
+            len(" ".join(words[first_word:break_before])),
+        )
+
         # here instead of a standard "really big" number for too-long lines,
         # we're scaling them by just how much too big they are
         if line_length > max_length:
-            return 10**10 * (line_length - max_length)
+            penalty = 10**10 * (line_length - max_length)
+            # min_penalties[first_word] = min(min_penalties[first_word], penalty)
+            print("too long!", penalty)
+            return penalty
 
         penalty = min_penalties[first_word] + (max_length - line_length) ** 2
         min_penalties[first_word] = min(min_penalties[first_word], penalty)
