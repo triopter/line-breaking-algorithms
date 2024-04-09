@@ -87,8 +87,14 @@ def break_lines(text, max_length):
 
             # for a valid potential line
             else:
-                # this line's penalty is the penalty for the best option so far for the line start plus the square of the extra space for the line
-                # (Noemi asks: Why the minimum for the line START?  Which we haven't calculated yet...)
+                # this line's penalty is the penalty for the best option so far for the line start
+                # (the longest line so far starting there) plus the square of the extra space for the line
+                # We'll have already populated that value because the line start was the line end for a
+                # previous iteration (unless this is the first iteration, and the penalty for the first
+                # word was populated to 0)
+                #
+                # Noemi says: I'm still not sure this penalty corresponds to anything
+                # specific to the line start, tho, rather than the line end?
                 line_penalty = (
                     min_penalties[line_start]
                     + slack_space_matrix[line_start][line_end] ** 2
