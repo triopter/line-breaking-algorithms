@@ -39,6 +39,15 @@ Journal of Algorithms 9, 1988.
 programming on intervals. Discrete Applied Mathematics 85, 1998.
 """
 
+"""
+Noemi's notes:
+This is where the algorithms start to get beyond my ability to make sense of 
+without extensive time and visalizations.  That's outside the current scope 
+of this project, so I've left this file only semi-commented, and variable 
+names might not be the best.  Clarifying PRs welcomed!
+"""
+
+
 import math
 
 
