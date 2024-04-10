@@ -35,27 +35,6 @@ to molecular biology. Theoretical Computer Science 64, 1989.
 Noemi's notes:
 I haven't entirely figured out how this algorithm operates -- in particular, how the 
 queue (currently named `lines_to_test`) is used.
-
-Note that the original version of this algorithm as of 2024-04-08 gave incorrect output 
-for at least one sample input:
-
-In:
-To sit in solemn silence on a dull, dark dock
-max_length: 16
-
-Expected: 
-To sit in solemn
-silence on a
-dull, dark dock
-
-Actual:
-To sit in
-solemn silence 
-on a dull,
-dark dock
-
-Juraj quickly identified the error (off-by-one in `find_best_end`).  The version
-in this file now produces expected output for all test cases in the repo.
 """
 
 import math
