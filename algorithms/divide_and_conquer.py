@@ -23,65 +23,101 @@ smaller problem instances it may actually run faster than the asymptotically
 superior approach.
 """
 
+"""
+Noemi's notes:
+Understanding this one to add comments or update the variable names beyond 
+what an LLM is capable of is also out of scope due to time and energy constraints.
+Clarifying PRs welcome here as well.
+"""
+
+
 import math
 
 
 def break_lines(text, max_length):
     words = text.split()
-    count = len(words)
-    offsets = [0]
-    for w in words:
-        offsets.append(offsets[-1] + len(w))
+    word_count = len(words)
+    word_offsets = [0]
+    for word in words:
+        word_offsets.append(word_offsets[-1] + len(word))
 
-    minima = [0] + [10**20] * count
-    breaks = [0] * (count + 1)
+    minimum_costs = [0] + [10**20] * word_count
+    optimal_breaks = [0] * (word_count + 1)
 
-    def cost(i, j):
-        w = offsets[j] - offsets[i] + j - i - 1
-        if w > max_length:
+    def calculate_cost(start_index, end_index):
+        line_width = (
+            word_offsets[end_index]
+            - word_offsets[start_index]
+            + end_index
+            - start_index
+            - 1
+        )
+        if line_width > max_length:
             return 10**10
-        return minima[i] + (max_length - w) ** 2
+        return minimum_costs[start_index] + (max_length - line_width) ** 2
 
-    def search(i0, j0, i1, j1):
-        stack = [(i0, j0, i1, j1)]
-        while stack:
-            i0, j0, i1, j1 = stack.pop()
-            if j0 < j1:
-                j = (j0 + j1) // 2
-                for i in range(i0, i1):
-                    c = cost(i, j)
-                    if c <= minima[j]:
-                        minima[j] = c
-                        breaks[j] = i
-                stack.append((breaks[j], j + 1, i1, j1))
-                stack.append((i0, j0, breaks[j] + 1, j))
+    def search(start_range_begin, end_range_begin, start_range_end, end_range_end):
+        search_stack = [
+            (start_range_begin, end_range_begin, start_range_end, end_range_end)
+        ]
+        while search_stack:
+            start_range_begin, end_range_begin, start_range_end, end_range_end = (
+                search_stack.pop()
+            )
+            if end_range_begin < end_range_end:
+                middle_index = (end_range_begin + end_range_end) // 2
+                for current_index in range(start_range_begin, start_range_end):
+                    current_cost = calculate_cost(current_index, middle_index)
+                    if current_cost <= minimum_costs[middle_index]:
+                        minimum_costs[middle_index] = current_cost
+                        optimal_breaks[middle_index] = current_index
+                search_stack.append(
+                    (
+                        optimal_breaks[middle_index],
+                        middle_index + 1,
+                        start_range_end,
+                        end_range_end,
+                    )
+                )
+                search_stack.append(
+                    (
+                        start_range_begin,
+                        end_range_begin,
+                        optimal_breaks[middle_index] + 1,
+                        middle_index,
+                    )
+                )
 
-    n = count + 1
-    i = 0
-    offset = 0
+    total_words = word_count + 1
+    iteration_index = 0
+    current_offset = 0
     while True:
-        r = min(n, 2 ** (i + 1))
-        edge = 2**i + offset
-        search(0 + offset, edge, edge, r + offset)
-        x = minima[r - 1 + offset]
-        for j in range(2**i, r - 1):
-            y = cost(j + offset, r - 1 + offset)
-            if y <= x:
-                n -= j
-                i = 0
-                offset += j
+        range_limit = min(total_words, 2 ** (iteration_index + 1))
+        current_edge = 2**iteration_index + current_offset
+        search(
+            0 + current_offset, current_edge, current_edge, range_limit + current_offset
+        )
+        best_cost = minimum_costs[range_limit - 1 + current_offset]
+        for current_index in range(2**iteration_index, range_limit - 1):
+            potential_cost = calculate_cost(
+                current_index + current_offset, range_limit - 1 + current_offset
+            )
+            if potential_cost <= best_cost:
+                total_words -= current_index
+                iteration_index = 0
+                current_offset += current_index
                 break
         else:
-            if r == n:
+            if range_limit == total_words:
                 break
-            i = i + 1
+            iteration_index += 1
 
     lines = []
-    j = count
-    while j > 0:
-        i = breaks[j]
-        lines.append(" ".join(words[i:j]))
-        j = i
+    current_word_index = word_count
+    while current_word_index > 0:
+        start_index = optimal_breaks[current_word_index]
+        lines.append(" ".join(words[start_index:current_word_index]))
+        current_word_index = start_index
     lines.reverse()
     return lines
 
