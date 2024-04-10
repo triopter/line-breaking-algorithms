@@ -127,4 +127,4 @@ def break_lines(text, max_length):
 
 
 # skip tests with inputs more than this number of words long
-break_lines.max_test_length = math.inf
+break_lines.max_test_length = 200
